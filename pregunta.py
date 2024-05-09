@@ -1,53 +1,45 @@
-"""
-Laboratorio ingestion de datos textuales
------------------------------------------------------------------------------------------
-
-Realice la limpieza del dataframe. Los tests evaluan si la limpieza fue realizada 
-correctamente. Tenga en cuenta datos faltantes y duplicados.
-
-"""
-import os
 import csv
-import pandas as pd
+import os
+import zipfile
 
-def creaset():
-    # Rutas de los directorios de las carpetas
-    paths = ["/train/", "/test/"]
-    # Nombres de los archivos de salida CSV para los datos
-    output_files = ["train_dataset.csv", "test_dataset.csv"]
-    # Categorías de sentimientos (negative, positive, neutral)
+def crear_set_entrenamiento_testeo():
+    # Descomprimir el archivo 'data.zip'
+    with zipfile.ZipFile('data.zip', 'r') as zip_ref:
+        zip_ref.extractall()
+
+    # Definir las rutas de los directorios de entrenamiento y prueba
+    train_dir = './train/'
+    test_dir = './test/'
+    output_dir = './'
+
+    # Lista de categorías
     categories = ["negative", "positive", "neutral"]
-    
-   
-    # Itera sobre la enumeración de los nombres de archivos de salida
-    for index, file_name in enumerate(output_files):
-        # Abre el archivo CSV en modo de escritura y crea un escritor CSV
-        with open(file_name, "w", newline="") as csv_file:
-            csv_writer = csv.writer(csv_file)
-            # Escribe una fila de encabezado con los nombres de columna "phrase" y "sentiment"
-            csv_writer.writerow(["phrase", "sentiment"])
-        # Itera sobre cada categoría en las categorías de sentimientos
-        for category in categories:
-            # Construye la ruta completa al directorio de la categoría actual
-            folder_path = "data" + paths[index] + category
-            print("Processing files in:", folder_path)  # Depuración
-            # Abre el archivo CSV en modo de adjuntar para agregar datos adicionales
-            with open(output_files[index], "a", newline="") as csv_file:
-                csv_writer = csv.writer(csv_file)
-                # Itera sobre cada archivo en el directorio de la categoría actual
-                for file in os.listdir(folder_path):
-                    # Verifica si el archivo tiene la extensión .txt
-                    if file.endswith(".txt"):
-                        # Construye la ruta completa al archivo de texto actual
-                        file_path = os.path.join(folder_path, file)
-                        try:
-                            # Abre el archivo de texto y lee su contenido
-                            with open(file_path, "r") as text_file:
-                                content = text_file.read()
-                                # Escribe una nueva fila en el archivo CSV con el contenido del archivo de texto y la categoría actual
-                                csv_writer.writerow([content, category])
-                        except Exception as e:
-                            print("Error reading file:", file_path)
-                            print(e)
 
-creaset()
+    # Función auxiliar para escribir en el archivo CSV
+    def write_to_csv(file_path, content, category):
+        with open(file_path, "a", newline="", encoding="utf-8") as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow([content, category])
+
+    # Iterar sobre los directorios de entrenamiento y prueba
+    for directory in [train_dir, test_dir]:
+        output_file = "train_dataset.csv" if directory == train_dir else "test_dataset.csv"
+        output_file = os.path.join(output_dir, output_file)
+
+        # Escribir encabezados en el archivo CSV
+        with open(output_file, "w", newline="", encoding="utf-8") as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(["phrase", "sentiment"])
+
+        # Iterar sobre las categorías y los archivos de texto
+        for category in categories:
+            folder_path = os.path.join(directory, category)
+            for file_name in os.listdir(folder_path):
+                if file_name.endswith(".txt"):
+                    file_path = os.path.join(folder_path, file_name)
+                    with open(file_path, "r", encoding="utf-8") as text_file:
+                        content = text_file.read()
+                        write_to_csv(output_file, content, category)
+
+# Llamar al método para crear los conjuntos de entrenamiento y prueba
+crear_set_entrenamiento_testeo()
